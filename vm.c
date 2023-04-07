@@ -29,6 +29,9 @@ seginit(void)
   lgdt(c->gdt, sizeof(c->gdt));
 }
 
+/* メモ　
+ * 　x86のページングハードウェアのようにVAからPTEを探す
+ */
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
@@ -38,11 +41,11 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
   pde_t *pde;
   pte_t *pgtab;
 
-  pde = &pgdir[PDX(va)];
-  if(*pde & PTE_P){
+  pde = &pgdir[PDX(va)]; // メモ　　PDXで上位10bitを取得
+  if(*pde & PTE_P){ // メモ エントリが存在かつ有効
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
   } else {
-    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
+    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0) // メモ allocできなければ0を返す
       return 0;
     // Make sure all those PTE_P bits are zero.
     memset(pgtab, 0, PGSIZE);
@@ -51,9 +54,12 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
     // entries, if necessary.
     *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
   }
-  return &pgtab[PTX(va)];
+  return &pgtab[PTX(va)]; // メモ PTXは12bitシフト
 }
 
+/* メモ
+ * 仮想・物理アドレスの範囲をページテーブルにマッピング
+ */
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
@@ -66,11 +72,11 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
   a = (char*)PGROUNDDOWN((uint)va);
   last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
   for(;;){
-    if((pte = walkpgdir(pgdir, a, 1)) == 0)
+    if((pte = walkpgdir(pgdir, a, 1)) == 0) //　メモ 指定したpgdirの　仮想アドレスaに対応するページテーブルのエントリpteを取得
       return -1;
     if(*pte & PTE_P)
       panic("remap");
-    *pte = pa | perm | PTE_P;
+    *pte = pa | perm | PTE_P; // メモ ページテーブルに物理アドレスをマッピング．　permでpermission. PTE_Pで有効であることを示す
     if(a == last)
       break;
     a += PGSIZE;
@@ -121,11 +127,17 @@ setupkvm(void)
   pde_t *pgdir;
   struct kmap *k;
 
+  /* メモ */
+  // Allocate a page for the page directory.
   if((pgdir = (pde_t*)kalloc()) == 0)
     return 0;
   memset(pgdir, 0, PGSIZE);
   if (P2V(PHYSTOP) > (void*)DEVSPACE)
     panic("PHYSTOP too high");
+
+  /* メモ */
+  // install the transltations that the kernel needs.
+  // kmap describes them.
   for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
     if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
                 (uint)k->phys_start, k->perm) < 0) {

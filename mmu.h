@@ -70,10 +70,10 @@ struct segdesc {
 // +----------------+----------------+---------------------+
 //  \--- PDX(va) --/ \--- PTX(va) --/
 
-// page directory index
+// page directory index 　 //　メモ　上位10bitを取得
 #define PDX(va)         (((uint)(va) >> PDXSHIFT) & 0x3FF)
 
-// page table index
+// page table index   //　メモ　12bit右シフト
 #define PTX(va)         (((uint)(va) >> PTXSHIFT) & 0x3FF)
 
 // construct virtual address from indexes and offset

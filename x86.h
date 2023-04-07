@@ -138,6 +138,7 @@ rcr2(void)
   return val;
 }
 
+// Set val into cr3 (which controls what page table is in use)
 static inline void
 lcr3(uint val)
 {

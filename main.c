@@ -99,11 +99,24 @@ startothers(void)
 // hence the __aligned__ attribute.
 // PTE_PS in a page directory entry enables 4Mbyte pages.
 
+/*
+ * __attribute__: 関数の属性の指定
+ * __aligned__: アラインメントを指定
+ */
 __attribute__((__aligned__(PGSIZE)))
 pde_t entrypgdir[NPDENTRIES] = {
   // Map VA's [0, 4MB) to PA's [0, 4MB)
+  /*
+   * []でpgdirのインデックスを指定
+   * (0): 上位10bitの物理アドレス
+   * PTE_　: 下位22bitにおけるフラグ
+   */
   [0] = (0) | PTE_P | PTE_W | PTE_PS,
   // Map VA's [KERNBASE, KERNBASE+4MB) to PA's [0, 4MB)
+  /*
+   * 22bit右シフトで、上位10bitを取り出す
+   * 0x80000000 >> 22 = 0x200
+   */
   [KERNBASE>>PDXSHIFT] = (0) | PTE_P | PTE_W | PTE_PS,
 };
 

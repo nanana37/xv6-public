@@ -62,7 +62,12 @@ entry:
   # high addresses. The indirect call is needed because
   # the assembler produces a PC-relative instruction
   # for a direct jump.
+
+  # $main: immidiate of main address
+  # Compiler puts symbol (like main) in 0x80... address so that PC can jump to kernel space
+  # *%eax: content of %eax = main address
   mov $main, %eax
   jmp *%eax
 
+# same as char stack[KSTACKSIZE];
 .comm stack, KSTACKSIZE
